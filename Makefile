@@ -17,6 +17,10 @@ playground:
 run:
 	PYTHONPATH=. uv run python finance_agent/fast_api_app.py
 
+# Launch the standalone HTML dashboard on port 8090
+dashboard:
+	PYTHONPATH=. uv run python dashboard/main.py
+
 # Run the full test suite
 test:
 	uv run pytest -v

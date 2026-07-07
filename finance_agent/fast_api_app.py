@@ -193,6 +193,35 @@ async def handle_pubsub(request: Request):
             "session_id": session_id,
             "message": "Transaction requires human confirmation/flagging."
         }
+        
+        # Save to pending_reviews.json
+        import datetime
+        pending_file = os.path.join(AGENT_DIR, "pending_reviews.json")
+        pending_list = []
+        if os.path.exists(pending_file):
+            try:
+                with open(pending_file, "r") as f:
+                    pending_list = json.load(f)
+            except Exception:
+                pass
+                
+        # Append the new transaction details if it doesn't already exist
+        if not any(x.get("id") == session_id for x in pending_list):
+            pending_list.append({
+                "id": session_id,
+                "amount": transaction_payload.get("amount", 0.0),
+                "merchant": transaction_payload.get("merchant", "Unknown"),
+                "category": transaction_payload.get("category", "Uncategorized"),
+                "description": transaction_payload.get("description", ""),
+                "date": transaction_payload.get("date") or transaction_payload.get("date_str") or datetime.datetime.today().strftime("%Y-%m-%d"),
+                "session_id": session_id
+            })
+            
+            try:
+                with open(pending_file, "w") as f:
+                    json.dump(pending_list, f, indent=2)
+            except Exception:
+                pass
     elif final_output:
         response_data = final_output
     else:
