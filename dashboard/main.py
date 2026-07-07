@@ -2,9 +2,21 @@ import os
 import json
 import sqlite3
 import datetime
+from collections import defaultdict
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
+
+# Load local environment variables (including GEMINI_API_KEY)
+from dotenv import load_dotenv
+load_dotenv()
+
+# Import the local chat agent from our package
+from finance_agent.agent import chat_agent
+from google.adk.runners import Runner
+from google.adk.sessions import InMemorySessionService
+from google.adk.agents.run_config import RunConfig, StreamingMode
+from google.genai import types
 
 app = FastAPI(title="Finance Manager Dashboard")
 
@@ -13,9 +25,17 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(BASE_DIR, "finance.db")
 PENDING_FILE = os.path.join(BASE_DIR, "pending_reviews.json")
 
+# In-process Chat Runner setup
+session_service = InMemorySessionService()
+chat_runner = Runner(agent=chat_agent, session_service=session_service, app_name="dashboard_chat", auto_create_session=True)
+
 class ActionRequest(BaseModel):
     action: str  # "approve" or "flag"
     category: str | None = None  # Confirmed category if approved
+
+class ChatRequest(BaseModel):
+    message: str
+    session_id: str = "dashboard-chat-session"
 
 def get_db_connection():
     if not os.path.exists(DB_PATH):
@@ -121,35 +141,62 @@ def get_insights(month: str | None = None):
         )
         actuals = {row["category"]: row["total"] for row in cursor.fetchall()}
         
-        # 4. Load baselines
-        cursor.execute("SELECT category, avg_spend, std_dev FROM baselines")
-        baselines = {row["category"]: {"avg_spend": row["avg_spend"], "std_dev": row["std_dev"]} for row in cursor.fetchall()}
+        # 4. Compute Dynamic Baselines
+        # Excludes the month we are analyzing to get the true historical averages
+        cursor.execute("SELECT amount, category, date FROM transactions")
+        txs = cursor.fetchall()
+        
+        monthly_category_spend = defaultdict(lambda: defaultdict(float))
+        all_months = set()
+        for tx in txs:
+            m = tx["date"][:7]  # YYYY-MM
+            all_months.add(m)
+            monthly_category_spend[tx["category"]][m] += tx["amount"]
+            
+        # Determine complete historical months (excluding the month we are analyzing)
+        complete_months = sorted(list(all_months - {month}))
+        if not complete_months:
+            # Fallback to all months if no other complete months exist
+            complete_months = sorted(list(all_months))
+            
+        num_months = len(complete_months)
+        dynamic_baselines = {}
+        for cat, spends_by_month in monthly_category_spend.items():
+            monthly_amounts = [spends_by_month[m] for m in complete_months]
+            mean = sum(monthly_amounts) / num_months if num_months > 0 else 0.0
+            dynamic_baselines[cat] = mean
         
         # 5. Load category budgets
         cursor.execute("SELECT category, limit_amount FROM budgets")
         budgets = {row["category"]: row["limit_amount"] for row in cursor.fetchall()}
         
         # Projections and Deviations calculation
-        projections = []
         overall_actual = sum(actuals.values())
         
         # Determine extrapolation factor
         today = datetime.datetime.today()
         current_year_month = today.strftime("%Y-%m")
+        too_early_to_project = False
+        
         if month == current_year_month:
             current_day = today.day
-            import calendar
-            total_days = calendar.monthrange(today.year, today.month)[1]
-            scale_factor = total_days / current_day
+            if current_day < 5:
+                # Too early to project - scale factor is 1.0 (current total only)
+                scale_factor = 1.0
+                too_early_to_project = True
+            else:
+                import calendar
+                total_days = calendar.monthrange(today.year, today.month)[1]
+                scale_factor = total_days / current_day
         else:
             scale_factor = 1.0
             
         overall_projected = overall_actual * scale_factor
         
         category_bars = []
-        for cat in set(list(actuals.keys()) + list(baselines.keys())):
+        for cat in set(list(actuals.keys()) + list(dynamic_baselines.keys())):
             actual = actuals.get(cat, 0.0)
-            baseline = baselines.get(cat, {}).get("avg_spend", 0.0)
+            baseline = dynamic_baselines.get(cat, 0.0)
             limit = budgets.get(cat, 0.0)
             
             category_bars.append({
@@ -163,7 +210,7 @@ def get_insights(month: str | None = None):
         # Top deviations for section C
         deviations = []
         for cat, act in actuals.items():
-            baseline_spend = baselines.get(cat, {}).get("avg_spend", 0.0)
+            baseline_spend = dynamic_baselines.get(cat, 0.0)
             if baseline_spend > 0:
                 diff = act - baseline_spend
                 diff_pct = (diff / baseline_spend) * 100.0
@@ -189,15 +236,19 @@ def get_insights(month: str | None = None):
                 "explanation": f"Spending is {round(dev['diff_pct'], 0)}% over your average baseline of {round(dev['baseline'], 0)} SEK."
             })
             
-        # Action B: Savings Gap
+        # Action B: Savings Gap (Sane and capped calculation)
         remaining = income - overall_projected
         savings_gap = savings_goal - remaining
         if savings_gap > 0:
-            actions.append({
-                "action": "Close your monthly savings gap",
-                "impact": f"-{round(savings_gap, 0)} SEK/mo",
-                "explanation": f"You are currently projected to save {round(remaining, 0)} SEK, which is short of your {round(savings_goal, 0)} SEK goal."
-            })
+            # Cap the proposed savings/cut impact to what they actually spend
+            impact_amt = min(savings_gap, overall_projected)
+            # Also ensure we don't propose saving more than income allows
+            if impact_amt > 0 and remaining < income:
+                actions.append({
+                    "action": "Close your monthly savings gap",
+                    "impact": f"-{round(impact_amt, 0)} SEK/mo",
+                    "explanation": f"You are currently projected to save {round(remaining, 0)} SEK, which is short of your {round(savings_goal, 0)} SEK goal."
+                })
             
         # Ensure we always return exactly 3 actions (with fallbacks if database is empty/fresh)
         while len(actions) < 3:
@@ -227,6 +278,7 @@ def get_insights(month: str | None = None):
             "overall_limit": round(sum(budgets.values()), 2),
             "income": income,
             "savings_goal": savings_goal,
+            "too_early_to_project": too_early_to_project,
             "category_bars": sorted(category_bars, key=lambda x: x["actual"], reverse=True),
             "actions": actions[:3]
         }
@@ -234,6 +286,44 @@ def get_insights(month: str | None = None):
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         conn.close()
+
+@app.post("/api/chat")
+async def chat_endpoint(req: ChatRequest):
+    if not req.message.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+        
+    try:
+        # Construct types.Content for LLM interaction
+        message = types.Content(
+            role="user",
+            parts=[types.Part.from_text(text=req.message)]
+        )
+        
+        # Run local chat agent with StreamingMode.NONE (non-streaming)
+        events = []
+        async for event in chat_runner.run_async(
+            new_message=message,
+            user_id="dashboard_user",
+            session_id=req.session_id,
+            run_config=RunConfig(streaming_mode=StreamingMode.NONE)
+        ):
+            events.append(event)
+            
+        # Extract response from the final content-bearing event to avoid duplication
+        answer = ""
+        for event in reversed(events):
+            if event.content and event.content.parts:
+                parts = [p.text for p in event.content.parts if p.text]
+                if parts:
+                    answer = "".join(parts).strip()
+                    break
+                    
+        if not answer:
+            answer = "I processed your request, but did not generate a text response."
+            
+        return {"response": answer}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Agent runtime error: {e}")
 
 if __name__ == "__main__":
     import uvicorn

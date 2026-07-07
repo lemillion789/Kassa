@@ -1,4 +1,4 @@
-.PHONY: install playground test seed lint clean
+.PHONY: install playground run dashboard test seed lint clean
 
 # ──────────────────────────────────────────────
 # Ambient Finance Agent — Local Dev Makefile

@@ -42,7 +42,7 @@
 
         /* Sleek scrollbar */
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
         ::-webkit-scrollbar-track {
             background: rgba(0, 0, 0, 0.2);
@@ -57,7 +57,7 @@
 
         header {
             padding: 2.5rem 2rem 1.5rem;
-            max-width: 1400px;
+            max-width: 1500px;
             width: 100%;
             margin: 0 auto;
             display: flex;
@@ -100,7 +100,7 @@
 
         main {
             flex: 1;
-            max-width: 1400px;
+            max-width: 1500px;
             width: 100%;
             margin: 0 auto;
             padding: 2rem;
@@ -154,7 +154,7 @@
         /* Dashboard layout splits */
         .content-grid {
             display: grid;
-            grid-template-columns: 1fr 1.2fr 1fr;
+            grid-template-columns: 1fr 1.1fr 1.1fr;
             gap: 2rem;
         }
 
@@ -198,14 +198,14 @@
             display: flex;
             flex-direction: column;
             gap: 1rem;
-            min-height: 200px;
+            min-height: 150px;
         }
 
         .no-pending {
             background: rgba(255, 255, 255, 0.02);
             border: 1px dashed var(--card-border);
             border-radius: 16px;
-            padding: 3rem 1.5rem;
+            padding: 2rem 1.5rem;
             text-align: center;
             color: var(--text-secondary);
             font-size: 0.9rem;
@@ -217,7 +217,7 @@
         }
 
         .no-pending-icon {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             color: var(--accent-green);
         }
 
@@ -361,19 +361,22 @@
             padding: 1.5rem;
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            min-height: 400px;
-        }
-
-        .bar-list {
+            flex: 1;
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
         }
 
+        .bar-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
         .bar-item {
             display: flex;
             flex-direction: column;
-            gap: 0.4rem;
+            gap: 0.35rem;
         }
 
         .bar-label {
@@ -392,9 +395,9 @@
         }
 
         .bar-track {
-            height: 10px;
+            height: 8px;
             background: rgba(255, 255, 255, 0.04);
-            border-radius: 5px;
+            border-radius: 4px;
             overflow: hidden;
             position: relative;
         }
@@ -402,13 +405,13 @@
         .bar-fill {
             height: 100%;
             background: linear-gradient(90deg, #818cf8 0%, #34d399 100%);
-            border-radius: 5px;
+            border-radius: 4px;
             width: 0%;
             transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .bar-fill.over-limit {
-            background: linear-gradient(90deg, #f87171 0%, #fbbf24 100%);
+        .bar-fill.over-baseline {
+            background: linear-gradient(90deg, #fbbf24 0%, #f87171 100%);
         }
 
         .bar-marker {
@@ -416,36 +419,35 @@
             top: 0;
             bottom: 0;
             width: 2px;
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.4);
             z-index: 10;
         }
 
         .bar-info-row {
             display: flex;
             justify-content: space-between;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: var(--text-secondary);
-            margin-top: 0.1rem;
+            margin-top: 0.05rem;
         }
 
         /* Top Savings Actions */
         .action-list {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
-            min-height: 300px;
+            gap: 0.75rem;
         }
 
         .action-card {
-            background: var(--card-bg);
+            background: rgba(22, 28, 45, 0.3);
             border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 1.25rem;
+            border-radius: 12px;
+            padding: 1rem;
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.4rem;
             position: relative;
             transition: border-color 0.2s ease;
         }
@@ -460,7 +462,7 @@
             align-self: flex-start;
             padding: 0.15rem 0.5rem;
             border-radius: 20px;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 600;
             letter-spacing: 0.2px;
             border: 1px solid rgba(52, 211, 153, 0.15);
@@ -468,24 +470,136 @@
 
         .action-impact {
             position: absolute;
-            top: 1.25rem;
-            right: 1.25rem;
+            top: 1rem;
+            right: 1rem;
             font-weight: 700;
             color: var(--accent-green);
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
 
         .action-title {
             font-weight: 600;
-            font-size: 0.95rem;
-            margin-top: 0.2rem;
-            padding-right: 4.5rem; /* prevent overlapping with impact */
+            font-size: 0.9rem;
+            margin-top: 0.1rem;
+            padding-right: 4rem; /* prevent overlapping with impact */
         }
 
         .action-desc {
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             color: var(--text-secondary);
             line-height: 1.4;
+        }
+
+        /* Interactive Chat Panel */
+        .chat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            height: 520px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(22, 28, 45, 0.2);
+        }
+
+        .chat-header h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .chat-bubble {
+            max-width: 85%;
+            padding: 0.75rem 1rem;
+            border-radius: 14px;
+            font-size: 0.85rem;
+            line-height: 1.45;
+            word-wrap: break-word;
+        }
+
+        .chat-bubble.assistant {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+            color: var(--text-primary);
+        }
+
+        .chat-bubble.user {
+            background: var(--accent-purple);
+            color: #fff;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+            box-shadow: 0 4px 10px rgba(129, 140, 248, 0.15);
+        }
+
+        .chat-typing {
+            align-self: flex-start;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding-left: 0.5rem;
+        }
+
+        .chat-input-area {
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            gap: 0.5rem;
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        .chat-input-box {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+            padding: 0.65rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .chat-input-box:focus {
+            border-color: var(--accent-purple);
+        }
+
+        .btn-send {
+            background: var(--accent-purple);
+            color: #fff;
+            padding: 0.65rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.2s ease;
+        }
+
+        .btn-send:hover {
+            background: #6366f1;
         }
 
         /* Spinner */
@@ -547,7 +661,7 @@
             <div class="kpi-card">
                 <h3>Projected Spent</h3>
                 <div class="value" id="kpi-projected">0 SEK</div>
-                <div class="subtitle">Forecast at run-rate</div>
+                <div class="subtitle" id="kpi-projected-sub">Forecast at run-rate</div>
             </div>
             <div class="kpi-card">
                 <h3>Savings Target</h3>
@@ -558,22 +672,34 @@
 
         <!-- Columns Section -->
         <div class="content-grid">
-            <!-- Col 1: Pending review -->
+            <!-- Col 1: Pending review & Advice stacked -->
             <div class="section-container">
-                <div class="section-header">
-                    <h2>Pending Review</h2>
-                    <span class="section-badge" id="pending-badge">0 pending</span>
+                <div class="section-container" style="gap: 0.5rem;">
+                    <div class="section-header">
+                        <h2>Pending Review</h2>
+                        <span class="section-badge" id="pending-badge">0 pending</span>
+                    </div>
+                    <div class="pending-list" id="pending-list-container">
+                        <div class="no-pending">
+                            <span class="no-pending-icon">✓</span>
+                            <p>No transactions require review.</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="pending-list" id="pending-list-container">
-                    <div class="no-pending">
-                        <span class="no-pending-icon">✓</span>
-                        <p>No transactions require review.</p>
+                
+                <div class="section-container" style="gap: 0.5rem; margin-top: 1rem;">
+                    <div class="section-header">
+                        <h2>Top Savings Actions</h2>
+                        <span class="section-badge">Prioritized</span>
+                    </div>
+                    <div class="action-list" id="actions-container">
+                        <!-- Actions dynamically loaded -->
                     </div>
                 </div>
             </div>
 
             <!-- Col 2: Spend Bars -->
-            <div class="section-container" style="grid-column: span 1;">
+            <div class="section-container">
                 <div class="section-header">
                     <h2>Category Spent vs Baseline</h2>
                     <span class="section-badge">This Month</span>
@@ -585,14 +711,30 @@
                 </div>
             </div>
 
-            <!-- Col 3: Savings Advice -->
+            <!-- Col 3: AI Finance Assistant Chat Panel -->
             <div class="section-container">
                 <div class="section-header">
-                    <h2>Top Savings Actions</h2>
-                    <span class="section-badge">Prioritized</span>
+                    <h2>AI Finance Assistant</h2>
+                    <span class="section-badge">Standard ReAct</span>
                 </div>
-                <div class="action-list" id="actions-container">
-                    <!-- Actions dynamically loaded -->
+                <div class="chat-card">
+                    <div class="chat-header">
+                        <span style="font-size: 1.1rem;">🤖</span>
+                        <h3>Local Chat Agent</h3>
+                    </div>
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="chat-bubble assistant">
+                            Hi! I am your AI personal finance assistant. Ask me questions about your monthly budget, active/phantom subscriptions, category deviations, or tips to optimize your savings.
+                        </div>
+                    </div>
+                    <div id="typing-indicator" class="chat-typing" style="display: none;">
+                        <span class="spinner"></span>
+                        <span>AI Assistant is analyzing...</span>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" class="chat-input-box" id="chat-input" placeholder="Type a message (e.g. 'What subscriptions am I paying for?')..." onkeydown="if(event.key === 'Enter') sendChatMessage()">
+                        <button class="btn-send" onclick="sendChatMessage()">Send</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -659,7 +801,6 @@
             const card = document.getElementById(`card-${id}`);
             const inputVal = document.getElementById(`input-${id}`).value;
             
-            // Show loading / disable buttons
             const btnApprove = card.querySelector(".btn-approve");
             const btnFlag = card.querySelector(".btn-flag");
             btnApprove.disabled = true;
@@ -682,7 +823,6 @@
                 });
                 
                 if (res.ok) {
-                    // Smoothly remove card
                     card.style.transition = "all 0.3s ease";
                     card.style.opacity = "0";
                     card.style.transform = "scale(0.9)";
@@ -710,7 +850,19 @@
                 // Update KPIs
                 document.getElementById("kpi-income").innerText = `${data.income.toLocaleString()} SEK`;
                 document.getElementById("kpi-spent").innerText = `${data.overall_actual.toLocaleString()} SEK`;
-                document.getElementById("kpi-projected").innerText = `${data.overall_projected.toLocaleString()} SEK`;
+                
+                const projectedKPI = document.getElementById("kpi-projected");
+                const projectedKPIsub = document.getElementById("kpi-projected-sub");
+                if (data.too_early_to_project) {
+                    projectedKPI.innerText = `${data.overall_actual.toLocaleString()} SEK`;
+                    projectedKPIsub.innerText = "Too early to project forecast";
+                    projectedKPIsub.style.color = "var(--accent-yellow)";
+                } else {
+                    projectedKPI.innerText = `${data.overall_projected.toLocaleString()} SEK`;
+                    projectedKPIsub.innerText = "Forecast at run-rate";
+                    projectedKPIsub.style.color = "var(--text-secondary)";
+                }
+                
                 document.getElementById("kpi-target").innerText = `${data.savings_goal.toLocaleString()} SEK`;
                 
                 const remaining = data.income - data.overall_projected;
@@ -730,11 +882,9 @@
                     barsContainer.innerHTML = `<p style="color: var(--text-secondary); text-align: center; margin-top: 5rem;">No data logged for this month.</p>`;
                 } else {
                     barsContainer.innerHTML = data.category_bars.map(bar => {
-                        // Max scaling relative to baseline or limit
                         const displayMax = Math.max(bar.actual, bar.baseline, bar.limit);
                         const actualPct = displayMax > 0 ? (bar.actual / displayMax) * 100 : 0;
                         const baselinePct = displayMax > 0 ? (bar.baseline / displayMax) * 100 : 0;
-                        const limitPct = displayMax > 0 ? (bar.limit / displayMax) * 100 : 0;
                         
                         const isOverLimit = bar.limit > 0 && bar.actual > bar.limit;
                         const isOverBaseline = bar.baseline > 0 && bar.actual > (bar.baseline * 1.25);
@@ -745,8 +895,8 @@
                                     <span class="bar-category">${bar.category.replace("_", " ")}</span>
                                     <span class="bar-vals">${bar.actual.toLocaleString()} / ${bar.baseline.toLocaleString()} SEK</span>
                                 </div>
-                                <div class="bar-track" title="Baseline: ${bar.baseline} SEK | Budget Limit: ${bar.limit} SEK">
-                                    <div class="bar-fill ${isOverLimit ? 'over-limit' : ''}" style="width: ${actualPct}%"></div>
+                                <div class="bar-track" title="Baseline: ${bar.baseline} SEK | Limit: ${bar.limit} SEK">
+                                    <div class="bar-fill ${isOverBaseline ? 'over-baseline' : ''}" style="width: ${actualPct}%"></div>
                                     <div class="bar-marker" style="left: ${baselinePct}%;" title="Average Baseline"></div>
                                 </div>
                                 <div class="bar-info-row">
@@ -772,6 +922,56 @@
             } catch (err) {
                 console.error("Error loading insights:", err);
             }
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById("chat-input");
+            const query = input.value.trim();
+            if (!query) return;
+            
+            input.value = "";
+            appendChatBubble(query, "user");
+            
+            const typing = document.getElementById("typing-indicator");
+            typing.style.display = "flex";
+            scrollToBottom();
+            
+            try {
+                const res = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: query })
+                });
+                
+                const data = await res.json();
+                typing.style.display = "none";
+                
+                if (res.ok) {
+                    appendChatBubble(data.response, "assistant");
+                } else {
+                    appendChatBubble(`Error: ${data.detail || "Could not process message."}`, "assistant");
+                }
+            } catch (err) {
+                typing.style.display = "none";
+                appendChatBubble("Network error while connecting to local chat agent.", "assistant");
+                console.error(err);
+            }
+            scrollToBottom();
+        }
+
+        function appendChatBubble(text, sender) {
+            const container = document.getElementById("chat-messages");
+            const bubble = document.createElement("div");
+            bubble.classList.add("chat-bubble", sender);
+            
+            // Basic markdown-like line break parsing
+            bubble.innerHTML = text.replace(/\n/g, "<br>");
+            container.appendChild(bubble);
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById("chat-messages");
+            container.scrollTop = container.scrollHeight;
         }
 
         // Init
