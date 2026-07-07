@@ -79,6 +79,43 @@ async def get_mcp_tool(name: str):
     return cache[name]
 
 
+def sanitize_and_check_security(data: dict) -> dict:
+    """Detects and redacts IBANs and flags potential prompt injections."""
+    # Swedish IBAN starts with SE followed by 22 digits (often spaced in groups of 4)
+    # Generic IBAN pattern: matches SE plus spacing and digits
+    iban_pattern = r'\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){3,8}(?:\s?[A-Z0-9]{1,4})?\b'
+    
+    # Prompt injection keywords
+    injection_keywords = [
+        "ignore all rules", "ignore previous instructions", "override rules",
+        "auto-log this", "auto log this", "bypass review", "do not review"
+    ]
+    
+    is_security_event = False
+    
+    # Iterate through all fields and sanitize/check
+    for key in list(data.keys()):
+        value = data[key]
+        if isinstance(value, str):
+            # Check for IBAN
+            if re.search(iban_pattern, value):
+                print(f"[SECURITY CHECKPOINT] Detected IBAN in field '{key}'. Redacting...")
+                value = re.sub(iban_pattern, "[REDACTED IBAN]", value)
+                data[key] = value
+                is_security_event = True
+                
+            # Check for prompt injection keywords
+            val_lower = value.lower()
+            if any(keyword in val_lower for keyword in injection_keywords):
+                print(f"[SECURITY CHECKPOINT] Potential prompt injection detected in field '{key}'!")
+                is_security_event = True
+                
+    if is_security_event:
+        data["is_security_event"] = True
+        
+    return data
+
+
 @node
 def extract_transaction(node_input: Any) -> dict:
     """Parses raw transaction event data (supports types.Content, base64 and JSON strings/dicts)."""
@@ -140,13 +177,14 @@ def extract_transaction(node_input: Any) -> dict:
             "query": s_data
         }
         
-    return {
+    extracted = {
         "amount": float(data.get("amount", 0.0)),
         "merchant": str(data.get("merchant", "")),
         "category": str(data.get("category", "")),
         "description": str(data.get("description", "")),
         "date_str": str(data.get("date") or data.get("date_str") or datetime.today().strftime("%Y-%m-%d"))
     }
+    return sanitize_and_check_security(extracted)
 
 
 @node
@@ -167,6 +205,13 @@ def route_transaction(node_input: dict) -> Event:
         return Event(
             output=node_input,
             route="advice"
+        )
+        
+    if node_input.get("is_security_event"):
+        return Event(
+            output=node_input,
+            route="review",
+            state={"transaction": node_input}
         )
         
     if node_input.get("is_conversational"):
@@ -346,6 +391,8 @@ async def record_outcome(ctx: Context, node_input: dict | str) -> AsyncGenerator
 
 
 # Benchmarking sub-agent (uses google_search tool ONLY)
+# RESERVED FOR FUTURE WORK: Live search sub-agent is defined here but currently
+# disabled in the live build due to API invocation limits and compatibility.
 benchmarking_agent = LlmAgent(
     name="benchmarking_agent",
     model=Gemini(
@@ -395,9 +442,13 @@ async def benchmark_spending(category: str, location: str = "Sweden") -> str:
         
     print(f"[SECURITY] Sanitized spending benchmark request: category='{sanitized_category}', location='{sanitized_location}'")
     
-    prompt = f"What is the average or typical monthly spend on {sanitized_category} for a single person in {sanitized_location}?"
-    res = await benchmarking_agent.run_async(prompt)
-    return str(res)
+    # Live web-search sub-agent invocation is disabled in this build.
+    # We return a static message showing that the sanitization/security constraint succeeded.
+    return (
+        f"Security check passed — only the generic category '{sanitized_category}' and "
+        f"location '{sanitized_location}' would be sent externally. "
+        f"(Live web benchmarking is disabled in this build; see README future work.)"
+    )
 
 
 # Conversational agent exposing all analysis tools and the benchmarking function tool wrapper

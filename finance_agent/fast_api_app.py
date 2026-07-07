@@ -109,8 +109,100 @@ def collect_feedback(feedback: Feedback) -> dict[str, str]:
     return {"status": "success"}
 
 
+from fastapi import Request, Response, HTTPException
+import base64
+
+@app.post("/")
+@app.post("/pubsub")
+async def handle_pubsub(request: Request):
+    """Handles Google Cloud Pub/Sub push trigger messages."""
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
+        
+    pubsub_msg = body.get("message")
+    if not pubsub_msg:
+        raise HTTPException(status_code=400, detail="Missing 'message' field")
+        
+    data_raw = pubsub_msg.get("data")
+    if not data_raw:
+        raise HTTPException(status_code=400, detail="Missing 'data' field in pubsub message")
+        
+    # Decode base64 if it is base64 encoded
+    try:
+        # Check if it's base64 encoded by trying to decode it
+        decoded_bytes = base64.b64decode(data_raw, validate=True)
+        data_str = decoded_bytes.decode("utf-8")
+    except Exception:
+        # If not valid base64, assume plain text/JSON string
+        if isinstance(data_raw, str):
+            data_str = data_raw
+        else:
+            data_str = json.dumps(data_raw)
+            
+    # Try parsing the decoded data string as JSON
+    try:
+        transaction_payload = json.loads(data_str)
+    except Exception:
+        # If it's not a JSON string, wrap it or use it as is
+        transaction_payload = data_str
+
+    # Extract fully-qualified subscription name and normalize it
+    fq_subscription = body.get("subscription", "projects/local/subscriptions/ambient-finance-sub")
+    # Normalize e.g. "projects/my-project/subscriptions/my-sub" -> "my-sub"
+    session_id = fq_subscription.split("/")[-1]
+    
+    # Run the transaction through the workflow runner
+    runner = app.state.runner
+    
+    from google.genai import types
+    from google.adk.agents.run_config import RunConfig, StreamingMode
+    
+    message = types.Content(
+        role="user",
+        parts=[types.Part.from_text(text=json.dumps({"data": transaction_payload}))]
+    )
+    
+    events = []
+    async for event in runner.run_async(
+        new_message=message,
+        user_id="pubsub_trigger",
+        session_id=session_id,
+        run_config=RunConfig(streaming_mode=StreamingMode.SSE)
+    ):
+        events.append(event)
+        
+    final_output = None
+    interrupt_required = False
+    for event in reversed(events):
+        if event.output is not None:
+            final_output = event.output
+            break
+        # Check if human review is requested (HITL pause)
+        if hasattr(event, "interrupt_ids") and event.interrupt_ids:
+            interrupt_required = True
+        elif hasattr(event, "message") and "confirm_category" in str(event):
+            interrupt_required = True
+            
+    status_code = 200
+    if interrupt_required:
+        status_code = 202  # Accepted (requires human interaction)
+        response_data = {
+            "status": "pending_human_review",
+            "session_id": session_id,
+            "message": "Transaction requires human confirmation/flagging."
+        }
+    elif final_output:
+        response_data = final_output
+    else:
+        response_data = {"status": "processed", "events_count": len(events)}
+        
+    return Response(content=json.dumps(response_data), media_type="application/json", status_code=status_code)
+
+
 # Main execution
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8080)

@@ -90,3 +90,9 @@ Built-in telemetry exports to Cloud Trace, BigQuery, and Cloud Logging.
 
 This agent supports the [A2A Protocol](https://a2a-protocol.org/). Use the [A2A Inspector](https://github.com/a2aproject/a2a-inspector) to test interoperability.
 See the [A2A Inspector docs](https://github.com/a2aproject/a2a-inspector) for details.
+
+## Future Work
+
+### 🌐 Live External Web Benchmarking
+A dedicated web-search sub-agent (`benchmarking_agent`) utilizing the built-in `google_search` tool is fully scaffolded and defined in `finance_agent/agent.py`. Live invocation of the search sub-agent is disabled in the current build to bypass API invocation limit constraints and compatibility limits. The security sanitization wrapper is fully active and validated.
+

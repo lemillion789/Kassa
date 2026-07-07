@@ -13,6 +13,10 @@ install:
 playground:
 	uv run agents-cli playground
 
+# Launch the FastAPI web service on port 8080
+run:
+	PYTHONPATH=. uv run python finance_agent/fast_api_app.py
+
 # Run the full test suite
 test:
 	uv run pytest -v
